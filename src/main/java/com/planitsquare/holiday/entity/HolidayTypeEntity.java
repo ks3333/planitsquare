@@ -11,11 +11,11 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name="holidayType")
-public class HolidayTypesEntity {
+public class HolidayTypeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long holidayTypesSeq;
+    Long holidayTypeSeq;
 
     @Column(insertable=false, updatable=false)
     Long holidayInfoSeq;

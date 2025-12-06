@@ -21,7 +21,7 @@ public class HolidayCountryEntity {
     Long holidayInfoSeq;
 
     @Column
-    String Country;
+    String country;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "holidayInfoSeq")

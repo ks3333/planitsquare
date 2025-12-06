@@ -9,6 +9,7 @@ import com.planitsquare.holiday.model.HolidayTypeDto;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
@@ -47,6 +48,21 @@ public class HolidayInfoJdbcRepository {
             "INSERT INTO holidayType (" +
                     "holidayInfoSeq, type" +
                     ") VALUES (?, ?)";
+
+    private static final String HOLIDAY_INFO_BULK_DELETE_SQL =
+            "DELETE FROM holidayInfo " +
+                    "WHERE holidayDay IN (:yearList)";
+
+    private static final String HOLIDAY_COUNTRY_BULK_DELETE_SQL =
+            "DELETE FROM holidayCountry " +
+                    "WHERE holidayInfoSeq IN (:ids)";
+
+    private static final String HOLIDAY_TYPE_BULK_DELETE_SQL =
+            "DELETE FROM holidayType " +
+                    "WHERE holidayInfoSeq IN (:ids)";
+
+    private static final String COUNTRY_INFO_BULK_DELETE_SQL =
+            "DELETE FROM countryInfo";
     public void holidayInfoBatchInsert(List<HolidayInfoDto> holidays) {
 
         jdbcTemplate.batchUpdate(HOLIDAY_INFO_BULK_INSERT_SQL, new BatchPreparedStatementSetter() {
@@ -130,6 +146,22 @@ public class HolidayInfoJdbcRepository {
             }
         });
     }
+
+//    public void holidayInfoBatchDelete(List<Integer> yearList) {
+//        jdbcTemplate.update(HOLIDAY_INFO_BULK_DELETE_SQL, new MapSqlParameterSource("yearList", yearList));
+//    }
+//
+//    public void holidayCountryBatchDelete(List<Long> ids) {
+//        jdbcTemplate.update(HOLIDAY_COUNTRY_BULK_DELETE_SQL, new MapSqlParameterSource("ids", ids));
+//    }
+//    public void holidayTypeBatchDelete(List<Long> ids) {
+//        jdbcTemplate.update(HOLIDAY_TYPE_BULK_DELETE_SQL, new MapSqlParameterSource("ids", ids));
+//    }
+
+    public void countryInfoBatchDelete() {
+        jdbcTemplate.update(COUNTRY_INFO_BULK_DELETE_SQL);
+    }
+
     private String toJson(List<String> list) {
         try {
             return list == null ? null : objectMapper.writeValueAsString(list);

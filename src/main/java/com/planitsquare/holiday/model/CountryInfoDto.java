@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 public class CountryInfoDto {
 
+    Long countryInfoSeq;
     String name;
     String countryCode;
 

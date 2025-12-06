@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Table(name="HolidayInfo")
+@Table(name="holidayInfo")
 public class HolidayInfoEntity {
 
     @Id
@@ -57,10 +57,10 @@ public class HolidayInfoEntity {
     String types;
 
     @OneToMany(mappedBy = "holidayInfo", fetch = FetchType.LAZY)
-    private List<HolidayCountryEntity> countiesEntitysList;
+    List<HolidayCountryEntity> countiesEntitysList;
 
     @OneToMany(mappedBy = "holidayInfo", fetch = FetchType.LAZY)
-    private List<HolidayTypesEntity> countiesTypeList;
+    List<HolidayTypeEntity> countiesTypeList;
 
     public HolidayInfoDto makeDto() {
         return HolidayInfoDto.builder()

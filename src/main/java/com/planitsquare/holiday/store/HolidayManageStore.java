@@ -1,26 +1,21 @@
 package com.planitsquare.holiday.store;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mysema.commons.lang.Assert;
+import com.planitsquare.holiday.entity.CountryInfoEntity;
 import com.planitsquare.holiday.entity.HolidayInfoEntity;
-import com.planitsquare.holiday.model.CountryInfoDto;
-import com.planitsquare.holiday.model.HolidayCountryDto;
-import com.planitsquare.holiday.model.HolidayInfoDto;
-import com.planitsquare.holiday.model.HolidayTypeDto;
+import com.planitsquare.holiday.model.*;
 import com.planitsquare.holiday.repository.HolidayInfoJdbcRepository;
 import com.planitsquare.holiday.repository.CountryInfoEntityRepository;
 import com.planitsquare.holiday.repository.HolidayCountryEntityRepository;
 import com.planitsquare.holiday.repository.HolidayInfoEntityRepository;
-import com.planitsquare.holiday.repository.HolidayTypesEntityRepository;
+import com.planitsquare.holiday.repository.HolidayTypeEntityRepository;
 import com.planitsquare.holiday.repository.HolidayInfoQueryDslRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 
 @Component
@@ -34,17 +29,17 @@ public class HolidayManageStore {
 
     private final HolidayInfoEntityRepository holidayInfoEntityRepository;
 
-    private final HolidayTypesEntityRepository holidayTypesEntityRepository;
+    private final HolidayTypeEntityRepository holidayTypeEntityRepository;
 
     private final CountryInfoEntityRepository countryInfoEntityRepository;
 
     private final HolidayInfoQueryDslRepository holidayInfoQueryDslRepository;
 
-    public HolidayManageStore(HolidayInfoJdbcRepository holidayInfoJdbcRepository, HolidayCountryEntityRepository holidayCountryEntityRepository, HolidayInfoEntityRepository holidayInfoEntityRepository, HolidayTypesEntityRepository holidayTypesEntityRepository, CountryInfoEntityRepository countryInfoEntityRepository, HolidayInfoQueryDslRepository holidayInfoQueryDslRepository) {
+    public HolidayManageStore(HolidayInfoJdbcRepository holidayInfoJdbcRepository, HolidayCountryEntityRepository holidayCountryEntityRepository, HolidayInfoEntityRepository holidayInfoEntityRepository, HolidayTypeEntityRepository holidayTypeEntityRepository, CountryInfoEntityRepository countryInfoEntityRepository, HolidayInfoQueryDslRepository holidayInfoQueryDslRepository) {
         this.holidayInfoJdbcRepository = holidayInfoJdbcRepository;
         this.holidayCountryEntityRepository = holidayCountryEntityRepository;
         this.holidayInfoEntityRepository = holidayInfoEntityRepository;
-        this.holidayTypesEntityRepository = holidayTypesEntityRepository;
+        this.holidayTypeEntityRepository = holidayTypeEntityRepository;
         this.countryInfoEntityRepository = countryInfoEntityRepository;
         this.holidayInfoQueryDslRepository = holidayInfoQueryDslRepository;
     }
@@ -76,7 +71,50 @@ public class HolidayManageStore {
         holidayInfoJdbcRepository.holidayTypeBatchInsert(holidayTypeDtoList);
     }
 
+    public void holidayInfoBatchDelete(List<Integer> yearList) {
+        Assert.notEmpty(yearList, "yearList list must not be empty");
+        holidayInfoEntityRepository.holidayInfoBatchDelete(yearList);
+    }
+
+    public void holidayCountryBatchDelete(List<Long> ids) {
+        Assert.notEmpty(ids, "Id list must not be empty");
+        holidayCountryEntityRepository.holidayCountryBatchDelete(ids);
+    }
+    public void holidayTypeBatchDelete(List<Long> ids) {
+        Assert.notEmpty(ids, "Id list must not be empty");
+        holidayTypeEntityRepository.holidayTypeBatchDelete(ids);
+    }
+
+    public void countryInfoBatchDelete() {
+        holidayInfoJdbcRepository.countryInfoBatchDelete();
+    }
+
     public List<HolidayInfoDto> getHolidayInfoAll(){
         return holidayInfoEntityRepository.findAll().stream().map(HolidayInfoEntity::makeDto).toList();
     }
+
+    public List<CountryInfoDto> getHCountryInfoAll(){
+        return countryInfoEntityRepository.findAll().stream().map(CountryInfoEntity::makeDto).toList();
+    }
+
+    public List<HolidayInfoDto> getHolidayInfoList(Integer startYear, Integer endYear){
+        Assert.notNull(startYear, "startYear must not be empty");
+        Assert.notNull(endYear, "endYear must not be empty");
+        return holidayInfoEntityRepository.findByHolidayYearBetween(startYear, endYear).stream().map(HolidayInfoEntity::makeDto).toList();
+    }
+
+    public Page<HolidayInfoDto> getHolidayInfoByCountry(String country, PageRequest pageable, SearchFilterDto filter){
+        return holidayInfoQueryDslRepository.findHolidayInfoByCountry(country, pageable, filter);
+    }
+
+    public Page<HolidayInfoDto> getHolidayInfoByYear(int year, PageRequest pageable, SearchFilterDto filter){
+        return holidayInfoQueryDslRepository.findHolidayInfoByYear(year, pageable, filter);
+    }
+
+    public boolean existsByCountryCode(String countryCode) {
+        return countryInfoEntityRepository.findByCountryCode(countryCode).isPresent();
+    }
+//    public List<HolidayInfoDto> getHolidayInfoByYear(int year, int page, int size) {
+//        return holidayInfoQueryDslRepository.findHolidayInfoByYear(year, PageRequest.of(page, size));
+//    }
 }

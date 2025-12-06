@@ -13,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @Setter
 public class HolidayTypeDto {
 
-    Long holidayTypesSeq;
+    Long holidayTypeSeq;
 
     Long holidayInfoSeq;
 

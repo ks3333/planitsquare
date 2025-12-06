@@ -1,5 +1,6 @@
 package com.planitsquare.holiday.entity;
 
+import com.planitsquare.holiday.model.CountryInfoDto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -11,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Table(name="CountryInfo")
+@Table(name="countryInfo")
 public class CountryInfoEntity {
 
     @Id
@@ -26,4 +27,11 @@ public class CountryInfoEntity {
     @Column
     String countryCode;
 
+    public CountryInfoDto makeDto() {
+        return CountryInfoDto.builder()
+                .countryInfoSeq(this.countryInfoSeq)
+                .name(this.name)
+                .countryCode(this.countryCode)
+                .build();
+    }
 }
