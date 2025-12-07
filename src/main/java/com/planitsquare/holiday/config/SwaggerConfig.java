@@ -30,8 +30,6 @@ public class SwaggerConfig {
                     openApi.getComponents().getSchemas().remove("Sort");
                     openApi.getComponents().getSchemas().remove("Order");
                     openApi.getComponents().getSchemas().remove("PageImpl");
-                    openApi.getComponents().getSchemas().remove("Page");
-                    openApi.getComponents().getSchemas().remove("PageHolidayInfoDto");
                     openApi.getComponents().getSchemas().remove("SortObject");
                 })
                 .build();
