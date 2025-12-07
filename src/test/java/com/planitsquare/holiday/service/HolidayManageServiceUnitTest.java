@@ -353,7 +353,7 @@ class HolidayManageServiceUnitTest {
                     .build();
             SearchFilterDto filter = new SearchFilterDto();
 
-            when(holidayManageStore.existsByCountryCode(country)).thenReturn(true);
+            when(holidayManageStore.existsByCountryCode(country)).thenReturn(false);
 
             // When & Then
             DateNotExistException exception = assertThrows(

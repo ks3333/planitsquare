@@ -1,12 +1,16 @@
 package com.planitsquare.holiday.api;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.planitsquare.holiday.model.HolidayInfoDto;
 import com.planitsquare.holiday.model.SearchFilterDto;
 import com.planitsquare.holiday.model.request.PageInfoRequest;
 import com.planitsquare.holiday.model.request.SearchFilterRequest;
+import com.planitsquare.holiday.model.request.SearchFilterRequestView;
 import com.planitsquare.holiday.model.response.CommonResponse;
 import com.planitsquare.holiday.service.HolidayManageService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.Explode;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springdoc.core.annotations.ParameterObject;
@@ -24,7 +28,7 @@ public class HolidayController {
         this.service = service;
     }
 
-    @GetMapping("/api/holiday/data/init")
+    @PutMapping("/api/holiday/data/init")
     @Operation(summary = "공휴일 데이터 초기화",
             description = "공휴일 데이터를 초기화합니다. 실행일의 년도와 해당 년도를 제외한 5년전 데이터를 생성합니다.")
     @ApiResponses(value = {
@@ -43,15 +47,19 @@ public class HolidayController {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
     })
-    public Page<HolidayInfoDto> searchFromYear(@PathVariable int year
-            , @ParameterObject SearchFilterRequest filter
+    public Page<HolidayInfoDto> searchFromYear(
+            @Parameter(
+                    name = "year",
+                    description = "연도"
+            )
+            @PathVariable int year
+            , @ParameterObject @JsonView(SearchFilterRequestView.yearSearch.class) SearchFilterRequest filter
             , @ParameterObject PageInfoRequest page
             , Errors e){
-
         return service.getHolidayInfoByYear(year, page, SearchFilterDto.of(filter));
     }
 
-    @GetMapping("/api/holiday/search/country/{country}")
+    @GetMapping("/api/holiday/search/country/{countryCode}")
     @Operation(summary = "국가별 공휴일 데이터 검색",
             description = "국가별 공휴일 데이터 검색합니다.")
     @ApiResponses(value = {
@@ -59,12 +67,16 @@ public class HolidayController {
             , @ApiResponse(responseCode = "404", description = "해당 국가의 공휴일 데이터가 존재하지 않습니다.")
             , @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
     })
-    public Page<HolidayInfoDto> searchFromCountry(@PathVariable String country
-            , @ParameterObject SearchFilterRequest filter
+    public Page<HolidayInfoDto> searchFromCountry(
+            @Parameter(
+                    name = "countryCode",
+                    description = "국가코드"
+            )
+            @PathVariable String countryCode
+            , @ParameterObject @JsonView(SearchFilterRequestView.countrySearch.class) SearchFilterRequest filter
             , @ParameterObject PageInfoRequest page
             , Errors e){
-
-        return service.getHolidayInfoByCountry(country, page, SearchFilterDto.of(filter));
+        return service.getHolidayInfoByCountry(countryCode, page, SearchFilterDto.of(filter));
     }
 
     @PutMapping("/api/holiday/refresh/{country}/{year}")
@@ -74,7 +86,17 @@ public class HolidayController {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
     })
-    public CommonResponse<String> refreshData(@PathVariable String country, @PathVariable int year){
+    public CommonResponse<String> refreshData(
+            @Parameter(
+                    name = "country",
+                    description = "국가코드"
+            )
+            @PathVariable String country
+            , @Parameter(
+                    name = "year",
+                    description = "연도"
+            )
+            @PathVariable int year){
         service.refreshHolidayData(year, country);
         return new CommonResponse("SUCCESS");
     }
@@ -86,7 +108,17 @@ public class HolidayController {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
     })
-    public CommonResponse<String> deleteData(@PathVariable String country, @PathVariable int year){
+    public CommonResponse<String> deleteData(
+            @Parameter(
+                    name = "country",
+                    description = "국가코드"
+            )
+            @PathVariable String country
+            , @Parameter(
+                name = "year",
+                description = "연도"
+            )
+            @PathVariable int year){
         service.deleteHolidayInfo(year, country);
         return new CommonResponse("SUCCESS");
     }

@@ -35,7 +35,9 @@ public class SearchFilterDto {
         dto.fromDate = request.getFromDate();
         dto.toDate = request.getToDate();
         dto.types = request.getTypes();
-        return dto;
+        dto.setCountry(request.getCountryCode());
+        dto.setYear(request.getYear());
 
+        return dto;
     }
 }

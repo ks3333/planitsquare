@@ -24,5 +24,5 @@ public interface HolidayInfoEntityRepository extends JpaRepository<HolidayInfoEn
 
     public List<HolidayInfoEntity> findByHolidayYearAndCountryCode(int year, String countryCode);
 
-    public Optional<HolidayInfoEntity> findFirstByHolidayYearAndCountryCode(int year, String countryCode);
+    public Optional<HolidayInfoEntity> countByHolidayYearAndCountryCode(int year, String countryCode);
 }

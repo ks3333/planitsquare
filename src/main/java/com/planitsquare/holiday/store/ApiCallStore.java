@@ -28,12 +28,22 @@ public class ApiCallStore {
         this.client = client;
     }
 
+    /**
+     * 국가 코드 리스트 조회 API 호출
+     * @return 국가 코드 리스트
+     */
     public List<CountryInfoDto> getCountryCodeList(){
         ParameterizedTypeReference<List<CountryInfoDto>> responseType = new ParameterizedTypeReference<List<CountryInfoDto>>() {};
         ApiCaller<List<CountryInfoDto>> caller = new ApiCaller<List<CountryInfoDto>>(client, responseType);
         return caller.callApiGet("/v3/AvailableCountries");
     }
 
+    /**
+     * 특정 연도, 국가의 공휴일 리스트 조회 API 호출
+     * @param year 연도
+     * @param country 국가
+     * @return 선택한 국가의 선택연도 공휴일 리스트
+     */
     public List<HolidayInfoDto> getHolidayList(int year, String country){
         ParameterizedTypeReference<List<HolidayInfoDto>> responseType = new ParameterizedTypeReference<List<HolidayInfoDto>>() {};
         ApiCaller<List<HolidayInfoDto>> caller = new ApiCaller<List<HolidayInfoDto>>(client, responseType);
@@ -42,6 +52,12 @@ public class ApiCallStore {
         return listDistinctByKey(result);
     }
 
+    /**
+     * 여러 연도, 국가의 공휴일 리스트 조회 API 호출 (동시 호출처리)
+     * @param yearList 연도 목록
+     * @param countryList 국가 목록
+     * @return 선택한 국가들의 선택연도 공휴일 리스트
+     */
     public List<HolidayInfoDto> getHolidayInfoList(List<Integer> yearList, List<String> countryList){
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         List<CompletableFuture<List<HolidayInfoDto>>> futures = new ArrayList<>();
@@ -84,6 +100,11 @@ public class ApiCallStore {
                 .toList();
     }
 
+    /**
+     * 리스트 내 중복 데이터 제거
+     * @param list 공휴일 목록
+     * @return 중복 제거된 공휴일 목록(국가/날자/공휴일 명 기준 중복제거)
+     */
     public List<HolidayInfoDto> listDistinctByKey(List<HolidayInfoDto> list) {
         return list.stream()
                 .filter(Objects::nonNull)

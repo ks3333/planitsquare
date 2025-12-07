@@ -214,6 +214,39 @@ class ApiCallStoreUnitTest {
                         "counties": null,
                         "launchYear": null,
                         "types": ["Public"]
+                    },
+                    {
+                        "date": "2025-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "KR",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                    {
+                        "date": "2024-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "US",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                    {
+                        "date": "2025-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "US",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
                     }
                 ]
                 """;
@@ -292,9 +325,53 @@ class ApiCallStoreUnitTest {
                 [
                     {
                         "date": "2024-01-01",
-                        "localName": "Holiday",
-                        "name": "Holiday",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
                         "countryCode": "KR",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                    {
+                        "date": "2024-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "US",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                    {
+                        "date": "2024-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "JP",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                    {
+                        "date": "2024-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "CN",
+                        "fixed": true,
+                        "global": true,
+                        "counties": null,
+                        "launchYear": null,
+                        "types": ["Public"]
+                    },
+                     {
+                        "date": "2024-01-01",
+                        "localName": "New Year",
+                        "name": "New Year's Day",
+                        "countryCode": "DE",
                         "fixed": true,
                         "global": true,
                         "counties": null,

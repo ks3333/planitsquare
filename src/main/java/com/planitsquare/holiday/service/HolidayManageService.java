@@ -35,6 +35,10 @@ public class HolidayManageService {
         this.holidayManageStore = holidayManageStore;
     }
 
+    /**
+     * 공휴일 데이터 초기화
+     * 실행일의 년도와 해당 년도를 제외한 5년전 데이터를 생성
+     */
     @Transactional(rollbackOn = Exception.class)
     public void initHolidayData(){
         List<CountryInfoDto> countryInfoList = apiStore.getCountryCodeList();
@@ -79,6 +83,13 @@ public class HolidayManageService {
 
     }
 
+    /**
+     * 국가별 공휴일 정보 조회
+     * @param country 국가코드
+     * @param pageInfo 페이지 정보
+     * @param filter 검색 필터
+     * @return 공휴일 정보 데이터
+     */
     public Page<HolidayInfoDto> getHolidayInfoByCountry(String country, PageInfoRequest pageInfo, SearchFilterDto filter){
         if(!holidayManageStore.existsByCountryCode(country)){
             throw new DateNotExistException("Country code not exist: %s".formatted(country));
@@ -90,6 +101,13 @@ public class HolidayManageService {
         return holidayManageStore.getHolidayInfoByCountry(country, pageable, filter);
     }
 
+    /**
+     * 연도별 공휴일 정보 조회
+     * @param year 연도
+     * @param pageInfo 페이지 정보
+     * @param filter 검색 필터
+     * @return 공휴일 정보 데이터
+     */
     public Page<HolidayInfoDto> getHolidayInfoByYear(int year, PageInfoRequest pageInfo, SearchFilterDto filter){
 
         Sort sort = makeSortData(pageInfo);
@@ -98,6 +116,11 @@ public class HolidayManageService {
         return holidayManageStore.getHolidayInfoByYear(year, pageable, filter);
     }
 
+    /**
+     * 정렬 정보 생성
+     * @param pageInfo 페이지 정보
+     * @return 정렬 데이터(DATE 기준 오름차순 기본)
+     */
     private Sort makeSortData(PageInfoRequest pageInfo){
         if(pageInfo.getSortTarget() == null || HolidaySortType.valueOfString(pageInfo.getSortTarget()) == null){
             return Sort.by(ASC, HolidaySortType.DATE.name());
@@ -106,6 +129,11 @@ public class HolidayManageService {
         }
     }
 
+    /**
+     * 특정 국가의 특정 연도 공휴일 데이터 갱신
+     * @param year 연도
+     * @param countryCode 국가코드
+     */
     @Transactional(rollbackOn = Exception.class)
     public void refreshHolidayData(int year, String countryCode){
         List<HolidayInfoDto> holidayInfoList = apiStore.getHolidayList(year, countryCode);
@@ -119,6 +147,11 @@ public class HolidayManageService {
         }
     }
 
+    /**
+     * 특정 국가의 특정 연도 공휴일 데이터 삭제
+     * @param year 연도
+     * @param countryCode 국가코드
+     */
     @Transactional(rollbackOn = Exception.class)
     public void deleteHolidayInfo(int year, String countryCode){
         List<HolidayInfoDto> beforeHolidayInfoList = holidayManageStore.getHolidayInfoList(year, countryCode);
@@ -130,6 +163,10 @@ public class HolidayManageService {
         }
     }
 
+    /**
+     * 전체 국가의 특정 연도 공휴일 데이터 동기화
+     * @param year 연도
+     */
     @Transactional(rollbackOn = Exception.class)
     public void scheduleSynchronizeHolidayData(int year){
         List<CountryInfoDto> countryInfoList = holidayManageStore.getHCountryInfoAll();

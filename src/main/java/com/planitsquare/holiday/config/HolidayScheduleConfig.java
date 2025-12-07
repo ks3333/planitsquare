@@ -26,11 +26,19 @@ public class HolidayScheduleConfig {
 
     @Scheduled(cron = "0 0 1 2 1 *")
     public void runEveryFiveMinutes() {
+        log.info("start holiday data synchronization schedule task");
         LocalDate now = LocalDate.now();
 
-        IntStream.rangeClosed(0, SYNC_YEAR_INTERVAL - 1)
-                .mapToObj(now::minusYears)
-                .map(LocalDate::getYear)
-                .forEach(service::scheduleSynchronizeHolidayData);
+        try{
+            IntStream.rangeClosed(0, SYNC_YEAR_INTERVAL - 1)
+                    .mapToObj(now::minusYears)
+                    .map(LocalDate::getYear)
+                    .forEach(service::scheduleSynchronizeHolidayData);
+        } catch (Exception e){
+            log.error("Exception during holiday data synchronization schedule task", e.getMessage());
+            log.error("ERROR DETAIL : ", e);
+        }
+
+        log.info("end holiday data synchronization schedule task");
     }
 }

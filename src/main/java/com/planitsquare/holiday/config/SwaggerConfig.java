@@ -18,12 +18,22 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public GroupedOpenApi chatOpenApi() {
+    public GroupedOpenApi holidayOpenApi() {
         String[] paths = {"/api/holiday/**"};
 
         return GroupedOpenApi.builder()
                 .group("글로벌 휴일 관리 서비스 API")
                 .pathsToMatch(paths)
+                .addOpenApiCustomizer( openApi -> {
+                    openApi.getComponents().getSchemas().remove("Pageable");
+                    openApi.getComponents().getSchemas().remove("PageableObject");
+                    openApi.getComponents().getSchemas().remove("Sort");
+                    openApi.getComponents().getSchemas().remove("Order");
+                    openApi.getComponents().getSchemas().remove("PageImpl");
+                    openApi.getComponents().getSchemas().remove("Page");
+                    openApi.getComponents().getSchemas().remove("PageHolidayInfoDto");
+                    openApi.getComponents().getSchemas().remove("SortObject");
+                })
                 .build();
     }
 }
