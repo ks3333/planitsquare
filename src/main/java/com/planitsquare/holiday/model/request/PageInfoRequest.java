@@ -4,10 +4,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.Explode;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Sort;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 @Setter

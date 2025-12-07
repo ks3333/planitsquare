@@ -1,8 +1,6 @@
 package com.planitsquare.holiday.model;
 
 import com.planitsquare.holiday.model.request.SearchFilterRequest;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.Explode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;

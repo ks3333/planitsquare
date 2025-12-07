@@ -1,7 +1,5 @@
 package com.planitsquare.holiday.model;
 
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

@@ -9,13 +9,18 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Table(name="holidayInfo")
+@Table(name="holidayInfo", uniqueConstraints = {
+        @UniqueConstraint(
+                name="holidayInfo_holidayDate_name_countryCode",
+                columnNames={"holidayDate", "name", "countryCode"}
+        )})
 public class HolidayInfoEntity {
 
     @Id
@@ -57,10 +62,39 @@ public class HolidayInfoEntity {
     String types;
 
     @OneToMany(mappedBy = "holidayInfo", fetch = FetchType.LAZY)
-    List<HolidayCountryEntity> countiesEntitysList;
+    List<HolidayCountryEntity> holidayCountryEntityList;
 
     @OneToMany(mappedBy = "holidayInfo", fetch = FetchType.LAZY)
-    List<HolidayTypeEntity> countiesTypeList;
+    List<HolidayTypeEntity> holidaytypeList;
+
+    public HolidayInfoEntity (HolidayInfoDto dto){
+        this.holidayYear = dto.getHolidayYear();
+        this.holidayDate = dto.getDate();
+        this.localName = dto.getLocalName();
+        this.name = dto.getName();
+        this.countryCode = dto.getCountryCode();
+        this.fixed = dto.isFixed();
+        this.global = dto.isGlobal();
+        this.counties = dto.getCounties() != null ? String.join(",", dto.getCounties()) : null;
+        this.launchYear = dto.getLaunchYear();
+        this.types = dto.getTypes() != null ? String.join(",", dto.getTypes()) : null;
+    }
+
+    public List<HolidayCountryEntity> getHolidayCountryEntityList() {
+        if(this.holidayCountryEntityList == null) {
+            holidayCountryEntityList = new ArrayList<HolidayCountryEntity>();
+        }
+
+        return this.holidayCountryEntityList;
+    }
+
+    public List<HolidayTypeEntity> getHolidayTypeEntityList() {
+        if(this.holidaytypeList == null) {
+            holidaytypeList = new ArrayList<HolidayTypeEntity>();
+        }
+
+        return this.holidaytypeList;
+    }
 
     public HolidayInfoDto makeDto() {
         return HolidayInfoDto.builder()
@@ -76,5 +110,19 @@ public class HolidayInfoEntity {
                 .launchYear(this.launchYear)
                 .types(this.types != null ? List.of(this.types.split(",")) : null)
                 .build();
+    }
+
+    public HolidayInfoEntity updateEntity(HolidayInfoDto dto){
+        this.holidayYear = dto.getHolidayYear();
+        this.holidayDate = dto.getDate();
+        this.localName = dto.getLocalName();
+        this.name = dto.getName();
+        this.countryCode = dto.getCountryCode();
+        this.fixed = dto.isFixed();
+        this.global = dto.isGlobal();
+        this.counties = dto.getCounties() != null ? String.join(",", dto.getCounties()) : null;
+        this.launchYear = dto.getLaunchYear();
+        this.types = dto.getTypes() != null ? String.join(",", dto.getTypes()) : null;
+        return this;
     }
 }

@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -76,31 +75,7 @@ public class HolidayManageService {
         holidayManageStore.holidayInfoBatchInsert(holidayInfo);
 
         List<HolidayInfoDto> saveList = holidayManageStore.getHolidayInfoList(yearList.getLast(), yearList.getFirst());
-        List<HolidayCountryDto> holidayCountryList = new ArrayList<>();
-        List<HolidayTypeDto> holidayTypeList = new ArrayList<>();
-        for(HolidayInfoDto info : saveList){
-            Long holidayInfoSeq = info.getHolidayInfoSeq();
-            List<String> countryCode = info.getCounties();
-            if(!ObjectUtils.isEmpty(countryCode)){
-                countryCode.forEach(country -> {
-                    holidayCountryList.add(HolidayCountryDto.builder().holidayInfoSeq(holidayInfoSeq).Country(country).build());
-                });
-            }
-
-            List<String> types = info.getTypes();
-            if(!ObjectUtils.isEmpty(types)){
-                types.forEach(type -> {
-                    holidayTypeList.add(HolidayTypeDto.builder().holidayInfoSeq(holidayInfoSeq).type(type).build());
-                });
-            }
-        }
-        if(!ObjectUtils.isEmpty(holidayCountryList)){
-            holidayManageStore.holidayCountryBatchInsert(holidayCountryList);
-        }
-
-        if(!ObjectUtils.isEmpty(holidayTypeList)){
-            holidayManageStore.holidayTypeBatchInsert(holidayTypeList);
-        }
+        holidayManageStore.bulkInsertHolidayAdditionalInfos(saveList);
 
     }
 
@@ -128,6 +103,19 @@ public class HolidayManageService {
             return Sort.by(ASC, HolidaySortType.DATE.name());
         }else {
             return Sort.by(pageInfo.getSort().equalsIgnoreCase(ASC.name()) ? ASC : DESC, pageInfo.getSortTarget());
+        }
+    }
+
+    @Transactional(rollbackOn = Exception.class)
+    public void refreshHolidayData(int year, String countryCode){
+        List<HolidayInfoDto> holidayInfoList = apiStore.getHolidayList(year, countryCode);
+        if(!holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode)){
+            holidayManageStore.holidayInfoBatchInsert(holidayInfoList);
+
+            List<HolidayInfoDto> saveList = holidayManageStore.getHolidayInfoList(year, countryCode);
+            holidayManageStore.bulkInsertHolidayAdditionalInfos(saveList);
+        }else{
+            holidayManageStore.refreshHolidayInfo(year, countryCode, holidayInfoList);
         }
     }
 

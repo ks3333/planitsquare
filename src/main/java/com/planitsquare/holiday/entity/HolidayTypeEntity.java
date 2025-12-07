@@ -27,4 +27,24 @@ public class HolidayTypeEntity {
     @JoinColumn(name = "holidayInfoSeq")
     HolidayInfoEntity holidayInfo;
 
+    public HolidayTypeEntity(String type, HolidayInfoEntity holidayInfo) {
+        this.type = type;
+        this.seHolidayInfo(holidayInfo);
+    }
+
+    public void seHolidayInfo(HolidayInfoEntity holidayInfo) {
+
+        if(this.holidayInfo != null) {
+            this.holidayInfo.getHolidayTypeEntityList().remove(this);
+        }
+
+        this.holidayInfo = holidayInfo;
+        holidayInfo.getHolidayTypeEntityList().add(this);
+
+    }
+
+    public void updateType(String type) {
+        this.type = type;
+    }
+
 }

@@ -6,10 +6,8 @@ import com.planitsquare.holiday.model.CountryInfoDto;
 import com.planitsquare.holiday.model.HolidayCountryDto;
 import com.planitsquare.holiday.model.HolidayInfoDto;
 import com.planitsquare.holiday.model.HolidayTypeDto;
-import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
@@ -78,9 +76,9 @@ public class HolidayInfoJdbcRepository {
                 ps.setString(5, dto.getCountryCode());
                 ps.setBoolean(6, dto.isFixed());
                 ps.setBoolean(7, dto.isGlobal());
-                ps.setString(8, toJson(dto.getCounties()));
+                ps.setString(8, toListString(dto.getCounties()));
                 ps.setObject(9, dto.getLaunchYear());
-                ps.setString(10, toJson(dto.getTypes()));
+                ps.setString(10, toListString(dto.getTypes()));
             }
 
             @Override
@@ -111,7 +109,7 @@ public class HolidayInfoJdbcRepository {
 
     public void holidayCountryBatchInsert(List<HolidayCountryDto> countryDtoList) {
 
-        jdbcTemplate.batchUpdate(COUNTRY_INFO_BULK_INSERT_SQL, new BatchPreparedStatementSetter() {
+        jdbcTemplate.batchUpdate(HOLIDAY_COUNTRY_BULK_INSERT_SQL, new BatchPreparedStatementSetter() {
 
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -130,7 +128,7 @@ public class HolidayInfoJdbcRepository {
 
     public void holidayTypeBatchInsert(List<HolidayTypeDto> holidayTypeDtoList) {
 
-        jdbcTemplate.batchUpdate(COUNTRY_INFO_BULK_INSERT_SQL, new BatchPreparedStatementSetter() {
+        jdbcTemplate.batchUpdate(HOLIDAY_TYPE_BULK_INSERT_SQL, new BatchPreparedStatementSetter() {
 
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -168,5 +166,13 @@ public class HolidayInfoJdbcRepository {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("JSON 변환 실패", e);
         }
+    }
+
+    private String toListString(List<String> list) {
+        if(list == null) {
+            return null;
+        }
+        return String.join(",", list);
+
     }
 }

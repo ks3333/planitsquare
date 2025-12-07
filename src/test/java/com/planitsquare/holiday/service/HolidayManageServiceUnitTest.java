@@ -65,10 +65,14 @@ class HolidayManageServiceUnitTest {
         @DisplayName("초기 데이터가 없을 때 정상적으로 데이터 초기화")
         void testInitHolidayData_WithNoExistingData() {
             // Given
+            List<HolidayInfoDto> savedList = createMockHolidayListWithSeq();
+
             when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
             when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
             when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
-            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt())).thenReturn(List.of());
+            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
+                    .thenReturn(List.of())      // 첫 번째 호출 (삭제 체크용)
+                    .thenReturn(savedList);     // 두 번째 호출 (추가 정보 삽입용)
 
             // When
             holidayManageService.initHolidayData();
@@ -78,6 +82,7 @@ class HolidayManageServiceUnitTest {
             verify(apiStore, times(1)).getHolidayInfoList(anyList(), anyList());
             verify(holidayManageStore, times(1)).countryInfoBatchInsert(mockCountryList);
             verify(holidayManageStore, times(1)).holidayInfoBatchInsert(mockHolidayList);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(savedList);
             verify(holidayManageStore, never()).countryInfoBatchDelete();
             verify(holidayManageStore, never()).holidayInfoBatchDelete(anyList());
         }
@@ -89,13 +94,14 @@ class HolidayManageServiceUnitTest {
             // Given
             List<CountryInfoDto> existingCountries = createMockCountryList();
             List<HolidayInfoDto> existingHolidays = createMockHolidayListWithSeq();
+            List<HolidayInfoDto> savedList = createMockHolidayListWithCountiesAndTypes();
 
             when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
             when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
             when(holidayManageStore.getHCountryInfoAll()).thenReturn(existingCountries);
             when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
-                    .thenReturn(existingHolidays)  // 첫 번째 호출 (삭제용)
-                    .thenReturn(createMockHolidayListWithSeq()); // 두 번째 호출 (타입/국가 데이터 생성용)
+                    .thenReturn(existingHolidays)   // 첫 번째 호출 (삭제용)
+                    .thenReturn(savedList);         // 두 번째 호출 (추가 정보 삽입용)
 
             // When
             holidayManageService.initHolidayData();
@@ -107,6 +113,16 @@ class HolidayManageServiceUnitTest {
             verify(holidayManageStore, times(1)).holidayInfoBatchDelete(anyList());
             verify(holidayManageStore, times(1)).countryInfoBatchInsert(mockCountryList);
             verify(holidayManageStore, times(1)).holidayInfoBatchInsert(mockHolidayList);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(savedList);
+
+            // 삭제 시 올바른 ID 목록이 전달되었는지 검증
+            ArgumentCaptor<List<Long>> deleteIdsCaptor = ArgumentCaptor.forClass(List.class);
+            verify(holidayManageStore).holidayTypeBatchDelete(deleteIdsCaptor.capture());
+
+            List<Long> capturedIds = deleteIdsCaptor.getValue();
+            assertNotNull(capturedIds);
+            assertFalse(capturedIds.isEmpty());
+            assertEquals(existingHolidays.size(), capturedIds.size());
         }
 
         @Test
@@ -131,6 +147,7 @@ class HolidayManageServiceUnitTest {
             assertEquals(exception, thrown);
             verify(holidayManageStore, never()).countryInfoBatchInsert(anyList());
             verify(holidayManageStore, never()).holidayInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).bulkInsertHolidayAdditionalInfos(anyList());
         }
 
         @Test
@@ -145,52 +162,61 @@ class HolidayManageServiceUnitTest {
             // When & Then
             assertThrows(RuntimeException.class, () -> holidayManageService.initHolidayData());
             verify(holidayManageStore, never()).countryInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).bulkInsertHolidayAdditionalInfos(anyList());
         }
 
         @Test
         @Order(5)
-        @DisplayName("Counties와 Types가 있는 경우 배치 삽입")
-        void testInitHolidayData_WithCountiesAndTypes() {
+        @DisplayName("추가 정보(Counties, Types) 일괄 삽입 검증")
+        void testInitHolidayData_BulkInsertAdditionalInfos() {
             // Given
-            List<HolidayInfoDto> holidaysWithDetails = createMockHolidayListWithCountiesAndTypes();
+            List<HolidayInfoDto> savedList = createMockHolidayListWithCountiesAndTypes();
 
             when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
             when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
             when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
             when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
-                    .thenReturn(holidaysWithDetails);
+                    .thenReturn(List.of())      // 첫 번째 호출
+                    .thenReturn(savedList);     // 두 번째 호출
 
             // When
             holidayManageService.initHolidayData();
 
             // Then
-            verify(holidayManageStore, times(1)).holidayCountryBatchInsert(holidayCountryCaptor.capture());
-            verify(holidayManageStore, times(1)).holidayTypeBatchInsert(holidayTypeCaptor.capture());
+            ArgumentCaptor<List<HolidayInfoDto>> listCaptor = ArgumentCaptor.forClass(List.class);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(listCaptor.capture());
 
-            List<HolidayCountryDto> capturedCountries = holidayCountryCaptor.getValue();
-            List<HolidayTypeDto> capturedTypes = holidayTypeCaptor.getValue();
+            List<HolidayInfoDto> capturedList = listCaptor.getValue();
+            assertNotNull(capturedList);
+            assertFalse(capturedList.isEmpty());
+            assertEquals(savedList, capturedList);
 
-            assertFalse(capturedCountries.isEmpty());
-            assertFalse(capturedTypes.isEmpty());
+            // Counties와 Types가 있는 데이터인지 확인
+            assertTrue(capturedList.stream().anyMatch(h ->
+                    h.getCounties() != null && !h.getCounties().isEmpty()));
+            assertTrue(capturedList.stream().anyMatch(h ->
+                    h.getTypes() != null && !h.getTypes().isEmpty()));
         }
 
         @Test
         @Order(6)
-        @DisplayName("Counties와 Types가 비어있는 경우 배치 삽입 안함")
-        void testInitHolidayData_WithoutCountiesAndTypes() {
+        @DisplayName("빈 추가 정보로도 bulkInsertHolidayAdditionalInfos 호출")
+        void testInitHolidayData_BulkInsertWithEmptyAdditionalInfos() {
             // Given
+            List<HolidayInfoDto> savedList = createMockHolidayListWithSeq();
+
             when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
             when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
             when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
             when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
-                    .thenReturn(createMockHolidayListWithSeq());
+                    .thenReturn(List.of())
+                    .thenReturn(savedList);
 
             // When
             holidayManageService.initHolidayData();
 
             // Then
-            verify(holidayManageStore, never()).holidayCountryBatchInsert(anyList());
-            verify(holidayManageStore, never()).holidayTypeBatchInsert(anyList());
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(savedList);
         }
 
         @Test
@@ -201,7 +227,9 @@ class HolidayManageServiceUnitTest {
             when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
             when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
             when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
-            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt())).thenReturn(List.of());
+            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
+                    .thenReturn(List.of())
+                    .thenReturn(createMockHolidayListWithSeq());
 
             // When
             holidayManageService.initHolidayData();
@@ -216,6 +244,62 @@ class HolidayManageServiceUnitTest {
             int currentYear = LocalDate.now().getYear();
             assertTrue(capturedYears.contains(currentYear));
             assertTrue(capturedYears.contains(currentYear - 5));
+        }
+
+        @Test
+        @Order(8)
+        @DisplayName("getHolidayInfoList가 yearList의 getLast()와 getFirst()로 호출되는지 검증")
+        void testInitHolidayData_VerifyGetHolidayInfoListParameters() {
+            // Given
+            List<HolidayInfoDto> savedList = createMockHolidayListWithSeq();
+
+            when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
+            when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
+            when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
+            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt()))
+                    .thenReturn(List.of())
+                    .thenReturn(savedList);
+
+            // When
+            holidayManageService.initHolidayData();
+
+            // Then
+            ArgumentCaptor<Integer> firstYearCaptor = ArgumentCaptor.forClass(Integer.class);
+            ArgumentCaptor<Integer> lastYearCaptor = ArgumentCaptor.forClass(Integer.class);
+
+            verify(holidayManageStore, times(2))
+                    .getHolidayInfoList(lastYearCaptor.capture(), firstYearCaptor.capture());
+
+            // yearList는 현재부터 5년 전까지이므로
+            int currentYear = LocalDate.now().getYear();
+            int expectedFirst = currentYear;
+            int expectedLast = currentYear - 5;
+
+            // 두 번째 호출 (인덱스 1)의 파라미터 검증
+            assertEquals(expectedLast, lastYearCaptor.getAllValues().get(1));
+            assertEquals(expectedFirst, firstYearCaptor.getAllValues().get(1));
+        }
+
+        @Test
+        @Order(9)
+        @DisplayName("DB 삽입 중 예외 발생 시 트랜잭션 롤백 확인")
+        void testInitHolidayData_TransactionRollback() {
+            // Given
+            RuntimeException dbException = new RuntimeException("Database error");
+
+            when(apiStore.getCountryCodeList()).thenReturn(mockCountryList);
+            when(apiStore.getHolidayInfoList(anyList(), anyList())).thenReturn(mockHolidayList);
+            when(holidayManageStore.getHCountryInfoAll()).thenReturn(List.of());
+            when(holidayManageStore.getHolidayInfoList(anyInt(), anyInt())).thenReturn(List.of());
+            doThrow(dbException).when(holidayManageStore).countryInfoBatchInsert(anyList());
+
+            // When & Then
+            assertThrows(RuntimeException.class, () -> holidayManageService.initHolidayData());
+
+            // countryInfoBatchInsert에서 예외 발생했으므로 이후 메소드는 호출되지 않아야 함
+            verify(holidayManageStore, times(1)).countryInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).holidayInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).bulkInsertHolidayAdditionalInfos(anyList());
         }
     }
 
@@ -243,7 +327,7 @@ class HolidayManageServiceUnitTest {
                     mockHolidayList.size()
             );
 
-            when(holidayManageStore.existsByCountryCode(country)).thenReturn(false);
+            when(holidayManageStore.existsByCountryCode(country)).thenReturn(true);
             when(holidayManageStore.getHolidayInfoByCountry(eq(country), any(PageRequest.class), eq(filter)))
                     .thenReturn(expectedPage);
 
@@ -296,7 +380,7 @@ class HolidayManageServiceUnitTest {
 
             Page<HolidayInfoDto> expectedPage = new PageImpl<>(mockHolidayList);
 
-            when(holidayManageStore.existsByCountryCode(country)).thenReturn(false);
+            when(holidayManageStore.existsByCountryCode(country)).thenReturn(true);
             when(holidayManageStore.getHolidayInfoByCountry(eq(country), any(PageRequest.class), eq(filter)))
                     .thenReturn(expectedPage);
 
@@ -327,7 +411,7 @@ class HolidayManageServiceUnitTest {
 
             Page<HolidayInfoDto> expectedPage = new PageImpl<>(mockHolidayList);
 
-            when(holidayManageStore.existsByCountryCode(country)).thenReturn(false);
+            when(holidayManageStore.existsByCountryCode(country)).thenReturn(true);
             when(holidayManageStore.getHolidayInfoByCountry(eq(country), any(PageRequest.class), eq(filter)))
                     .thenReturn(expectedPage);
 
@@ -356,7 +440,7 @@ class HolidayManageServiceUnitTest {
 
             Page<HolidayInfoDto> expectedPage = new PageImpl<>(mockHolidayList);
 
-            when(holidayManageStore.existsByCountryCode(country)).thenReturn(false);
+            when(holidayManageStore.existsByCountryCode(country)).thenReturn(true);
             when(holidayManageStore.getHolidayInfoByCountry(eq(country), any(PageRequest.class), eq(filter)))
                     .thenReturn(expectedPage);
 
@@ -498,6 +582,263 @@ class HolidayManageServiceUnitTest {
             // HolidaySortType.valueOfString()이 null을 반환하면 기본 정렬 적용
             Pageable capturedPageable = pageableCaptor.getValue();
             assertEquals(Sort.by(Sort.Direction.ASC, HolidaySortType.DATE.name()), capturedPageable.getSort());
+        }
+    }
+
+    @Nested
+    @DisplayName("refreshHolidayData 메소드 테스트")
+    class RefreshHolidayDataTest {
+
+        @Test
+        @Order(17)
+        @DisplayName("데이터가 존재하지 않을 때 새로 삽입")
+        void testRefreshHolidayData_InsertNew() {
+            // Given
+            int year = 2024;
+            String countryCode = "KR";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+            List<HolidayInfoDto> savedList = createMockHolidayListWithSeq();
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(false);
+            when(holidayManageStore.getHolidayInfoList(year, countryCode))
+                    .thenReturn(savedList);
+
+            // When
+            holidayManageService.refreshHolidayData(year, countryCode);
+
+            // Then
+            verify(apiStore, times(1)).getHolidayList(year, countryCode);
+            verify(holidayManageStore, times(1)).existsHolidayInfoByYearAndCountryCode(year, countryCode);
+            verify(holidayManageStore, times(1)).holidayInfoBatchInsert(holidayInfoList);
+            verify(holidayManageStore, times(1)).getHolidayInfoList(year, countryCode);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(savedList);
+            verify(holidayManageStore, never()).refreshHolidayInfo(anyInt(), anyString(), anyList());
+        }
+
+        @Test
+        @Order(18)
+        @DisplayName("데이터가 이미 존재할 때 갱신")
+        void testRefreshHolidayData_UpdateExisting() {
+            // Given
+            int year = 2024;
+            String countryCode = "US";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(true);
+
+            // When
+            holidayManageService.refreshHolidayData(year, countryCode);
+
+            // Then
+            verify(apiStore, times(1)).getHolidayList(year, countryCode);
+            verify(holidayManageStore, times(1)).existsHolidayInfoByYearAndCountryCode(year, countryCode);
+            verify(holidayManageStore, times(1)).refreshHolidayInfo(year, countryCode, holidayInfoList);
+            verify(holidayManageStore, never()).holidayInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).getHolidayInfoList(anyInt(), anyString());
+            verify(holidayManageStore, never()).bulkInsertHolidayAdditionalInfos(anyList());
+        }
+
+        @Test
+        @Order(19)
+        @DisplayName("API 호출 실패 시 RestClientCallException 발생")
+        void testRefreshHolidayData_ApiCallFailure() {
+            // Given
+            int year = 2024;
+            String countryCode = "KR";
+            RestClientCallException exception = new RestClientCallException(
+                    "API 호출 실패",
+                    500,
+                    "Internal Server Error"
+            );
+
+            when(apiStore.getHolidayList(year, countryCode)).thenThrow(exception);
+
+            // When & Then
+            RestClientCallException thrown = assertThrows(
+                    RestClientCallException.class,
+                    () -> holidayManageService.refreshHolidayData(year, countryCode)
+            );
+
+            assertEquals(exception, thrown);
+            verify(apiStore, times(1)).getHolidayList(year, countryCode);
+            verify(holidayManageStore, never()).existsHolidayInfoByYearAndCountryCode(anyInt(), anyString());
+            verify(holidayManageStore, never()).holidayInfoBatchInsert(anyList());
+            verify(holidayManageStore, never()).refreshHolidayInfo(anyInt(), anyString(), anyList());
+        }
+
+        @Test
+        @Order(20)
+        @DisplayName("새 데이터 삽입 시 추가 정보도 함께 삽입")
+        void testRefreshHolidayData_InsertWithAdditionalInfo() {
+            // Given
+            int year = 2023;
+            String countryCode = "JP";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+            List<HolidayInfoDto> savedList = createMockHolidayListWithCountiesAndTypes();
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(false);
+            when(holidayManageStore.getHolidayInfoList(year, countryCode))
+                    .thenReturn(savedList);
+
+            // When
+            holidayManageService.refreshHolidayData(year, countryCode);
+
+            // Then
+            verify(holidayManageStore, times(1)).holidayInfoBatchInsert(holidayInfoList);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(savedList);
+
+            // bulkInsertHolidayAdditionalInfos에 전달된 리스트 검증
+            ArgumentCaptor<List<HolidayInfoDto>> listCaptor = ArgumentCaptor.forClass(List.class);
+            verify(holidayManageStore).bulkInsertHolidayAdditionalInfos(listCaptor.capture());
+
+            List<HolidayInfoDto> capturedList = listCaptor.getValue();
+            assertNotNull(capturedList);
+            assertFalse(capturedList.isEmpty());
+            assertTrue(capturedList.stream().allMatch(h -> h.getHolidayInfoSeq() != null));
+        }
+
+        @Test
+        @Order(21)
+        @DisplayName("빈 휴일 목록으로 호출 시에도 정상 처리")
+        void testRefreshHolidayData_EmptyHolidayList() {
+            // Given
+            int year = 2024;
+            String countryCode = "XX";
+            List<HolidayInfoDto> emptyList = List.of();
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(emptyList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(false);
+            when(holidayManageStore.getHolidayInfoList(year, countryCode))
+                    .thenReturn(emptyList);
+
+            // When
+            holidayManageService.refreshHolidayData(year, countryCode);
+
+            // Then
+            verify(holidayManageStore, times(1)).holidayInfoBatchInsert(emptyList);
+            verify(holidayManageStore, times(1)).bulkInsertHolidayAdditionalInfos(emptyList);
+        }
+
+        @Test
+        @Order(22)
+        @DisplayName("갱신 시 올바른 파라미터로 호출되는지 검증")
+        void testRefreshHolidayData_VerifyRefreshParameters() {
+            // Given
+            int year = 2025;
+            String countryCode = "CN";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(true);
+
+            // When
+            holidayManageService.refreshHolidayData(year, countryCode);
+
+            // Then
+            ArgumentCaptor<Integer> yearCaptor = ArgumentCaptor.forClass(Integer.class);
+            ArgumentCaptor<String> countryCaptor = ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<List<HolidayInfoDto>> listCaptor = ArgumentCaptor.forClass(List.class);
+
+            verify(holidayManageStore).refreshHolidayInfo(
+                    yearCaptor.capture(),
+                    countryCaptor.capture(),
+                    listCaptor.capture()
+            );
+
+            assertEquals(year, yearCaptor.getValue());
+            assertEquals(countryCode, countryCaptor.getValue());
+            assertEquals(holidayInfoList, listCaptor.getValue());
+        }
+
+        @Test
+        @Order(23)
+        @DisplayName("DB 삽입 실패 시 예외 전파")
+        void testRefreshHolidayData_DatabaseInsertFailure() {
+            // Given
+            int year = 2024;
+            String countryCode = "KR";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+            RuntimeException dbException = new RuntimeException("Database insert failed");
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(false);
+            doThrow(dbException).when(holidayManageStore).holidayInfoBatchInsert(anyList());
+
+            // When & Then
+            RuntimeException thrown = assertThrows(
+                    RuntimeException.class,
+                    () -> holidayManageService.refreshHolidayData(year, countryCode)
+            );
+
+            assertEquals(dbException, thrown);
+            verify(holidayManageStore, times(1)).holidayInfoBatchInsert(holidayInfoList);
+            verify(holidayManageStore, never()).bulkInsertHolidayAdditionalInfos(anyList());
+        }
+
+        @Test
+        @Order(24)
+        @DisplayName("갱신 실패 시 예외 전파")
+        void testRefreshHolidayData_RefreshFailure() {
+            // Given
+            int year = 2024;
+            String countryCode = "US";
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+            RuntimeException refreshException = new RuntimeException("Refresh failed");
+
+            when(apiStore.getHolidayList(year, countryCode)).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(year, countryCode))
+                    .thenReturn(true);
+            doThrow(refreshException).when(holidayManageStore)
+                    .refreshHolidayInfo(anyInt(), anyString(), anyList());
+
+            // When & Then
+            RuntimeException thrown = assertThrows(
+                    RuntimeException.class,
+                    () -> holidayManageService.refreshHolidayData(year, countryCode)
+            );
+
+            assertEquals(refreshException, thrown);
+            verify(holidayManageStore, times(1))
+                    .refreshHolidayInfo(year, countryCode, holidayInfoList);
+        }
+
+        @Test
+        @Order(25)
+        @DisplayName("여러 연도와 국가에 대해 순차적으로 호출")
+        void testRefreshHolidayData_MultipleCallsSequentially() {
+            // Given
+            List<Integer> years = List.of(2023, 2024);
+            List<String> countries = List.of("KR", "US");
+            List<HolidayInfoDto> holidayInfoList = createMockHolidayList();
+
+            when(apiStore.getHolidayList(anyInt(), anyString())).thenReturn(holidayInfoList);
+            when(holidayManageStore.existsHolidayInfoByYearAndCountryCode(anyInt(), anyString()))
+                    .thenReturn(false);
+            when(holidayManageStore.getHolidayInfoList(anyInt(), anyString()))
+                    .thenReturn(createMockHolidayListWithSeq());
+
+            // When
+            for (Integer year : years) {
+                for (String country : countries) {
+                    holidayManageService.refreshHolidayData(year, country);
+                }
+            }
+
+            // Then - 총 4번(2년 × 2국가) 호출되어야 함
+            verify(apiStore, times(4)).getHolidayList(anyInt(), anyString());
+            verify(holidayManageStore, times(4))
+                    .existsHolidayInfoByYearAndCountryCode(anyInt(), anyString());
+            verify(holidayManageStore, times(4)).holidayInfoBatchInsert(anyList());
+            verify(holidayManageStore, times(4)).bulkInsertHolidayAdditionalInfos(anyList());
         }
     }
 

@@ -5,8 +5,6 @@ import com.planitsquare.holiday.model.CountryInfoDto;
 import com.planitsquare.holiday.model.HolidayInfoDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpStatusCode;
@@ -41,7 +39,7 @@ public class ApiCallStore {
         ApiCaller<List<HolidayInfoDto>> caller = new ApiCaller<List<HolidayInfoDto>>(client, responseType);
         List<HolidayInfoDto> result =  caller.callApiGet("/v3/PublicHolidays/{year}/{country}", year, country);
         result.forEach(f -> f.setHolidayYear(year));
-        return result;
+        return listDistinctByKey(result);
     }
 
     public List<HolidayInfoDto> getHolidayInfoList(List<Integer> yearList, List<String> countryList){
@@ -82,6 +80,14 @@ public class ApiCallStore {
         // flatten list
         return results.stream()
                 .flatMap(List::stream)
+                .distinct()
+                .toList();
+    }
+
+    public List<HolidayInfoDto> listDistinctByKey(List<HolidayInfoDto> list) {
+        return list.stream()
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
     }
 

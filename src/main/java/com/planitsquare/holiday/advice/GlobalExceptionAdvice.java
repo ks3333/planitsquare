@@ -2,22 +2,18 @@ package com.planitsquare.holiday.advice;
 
 import com.planitsquare.holiday.Exception.DateNotExistException;
 import com.planitsquare.holiday.Exception.RestClientCallException;
-import com.planitsquare.holiday.api.HolidayController;
 import com.planitsquare.holiday.model.response.ErrorResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import com.planitsquare.holiday.constant.ExceptionMessage;
 
 import java.time.LocalDateTime;

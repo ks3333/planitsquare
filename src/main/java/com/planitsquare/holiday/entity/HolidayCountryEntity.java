@@ -26,4 +26,23 @@ public class HolidayCountryEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "holidayInfoSeq")
     HolidayInfoEntity holidayInfo;
+
+    public HolidayCountryEntity(String country, HolidayInfoEntity holidayInfo) {
+        this.country = country;
+        this.seHolidayInfo(holidayInfo);
+    }
+    public void seHolidayInfo(HolidayInfoEntity holidayInfo) {
+
+        if(this.holidayInfo != null) {
+            this.holidayInfo.getHolidayTypeEntityList().remove(this);
+        }
+
+        this.holidayInfo = holidayInfo;
+        holidayInfo.getHolidayCountryEntityList().add(this);
+
+    }
+
+    public void updateCountry(String country) {
+        this.country = country;
+    }
 }

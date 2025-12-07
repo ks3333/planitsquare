@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface HolidayInfoEntityRepository extends JpaRepository<HolidayInfoEntity, Long> {
 
@@ -15,4 +16,8 @@ public interface HolidayInfoEntityRepository extends JpaRepository<HolidayInfoEn
     @Query(value = "DELETE FROM holidayInfo" +
             " WHERE holidayYear IN :yearList", nativeQuery = true)
     public void holidayInfoBatchDelete(List<Integer> yearList);
+
+    public List<HolidayInfoEntity> findByHolidayYearAndCountryCode(int year, String countryCode);
+
+    public Optional<HolidayInfoEntity> findFirstByHolidayYearAndCountryCode(int year, String countryCode);
 }

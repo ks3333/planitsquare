@@ -7,9 +7,8 @@ import com.planitsquare.holiday.model.SearchFilterDto;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
-import com.querydsl.core.types.dsl.EntityPathBase;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
@@ -27,7 +26,6 @@ import static com.planitsquare.holiday.entity.QHolidayCountryEntity.holidayCount
 import static com.planitsquare.holiday.entity.QHolidayTypeEntity.holidayTypeEntity;
 import static com.querydsl.core.types.Order.ASC;
 import static com.querydsl.core.types.Order.DESC;
-
 
 @Repository
 public class HolidayInfoQueryDslRepository {
@@ -85,11 +83,7 @@ public class HolidayInfoQueryDslRepository {
 
     private JPAQuery<?> findHolidayInfoQuery(SearchFilterDto filter) {
 
-        JPAQuery<?> query = queryFactory.from(holidayInfoEntity)
-                .leftJoin(holidayTypeEntity)
-                .on(holidayInfoEntity.holidayInfoSeq.eq(holidayTypeEntity.holidayInfoSeq))
-                .leftJoin(holidayCountryEntity)
-                .on(holidayInfoEntity.holidayInfoSeq.eq(holidayCountryEntity.holidayInfoSeq));
+        JPAQuery<?> query = queryFactory.from(holidayInfoEntity);
 
         Predicate where = holidaySearchPredicate(filter);
 
@@ -119,11 +113,17 @@ public class HolidayInfoQueryDslRepository {
         }
 
         if(filter.getTypes() != null) {
-            builder.and(holidayTypeEntity.type.in(filter.getTypes()));
+            builder.and(JPAExpressions.selectFrom(holidayTypeEntity)
+                    .where(holidayTypeEntity.holidayInfo.eq(holidayInfoEntity)
+                            .and(holidayTypeEntity.type.in(filter.getTypes()))
+                    ).exists());
         }
 
-        if(filter.getTypes() != null) {
-            builder.and(holidayCountryEntity.country.in(filter.getCounties()));
+        if(filter.getCounties() != null) {
+            builder.and(JPAExpressions.selectFrom(holidayCountryEntity)
+                    .where(holidayCountryEntity.holidayInfo.eq(holidayInfoEntity)
+                            .and(holidayCountryEntity.country.in(filter.getCounties()))
+                    ).exists());
         }
 
         return builder.hasValue() ? builder : null;
