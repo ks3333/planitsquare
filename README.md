@@ -17,7 +17,7 @@
 [API 명세](doc/apiDoc.md)
 
 ## 3. test 성공 스크린샷
-![TEST 실행 결과](doc/images/testResult.jpg)
+![TEST 실행 결과](doc/image/testResult.jpg)
 
 ## 4. Swagger UI 접근 URl
 * 1. ./gradlew bootRun 명령 실행하여 Server 구동 
@@ -25,4 +25,4 @@
   * http://localhost:8080//swagger.html
 
 ## 5. ERD
-![ERD](doc/images/erd.jpg)
+![ERD](doc/image/erd.jpg)
