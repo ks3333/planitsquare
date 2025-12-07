@@ -17,6 +17,11 @@ public interface HolidayInfoEntityRepository extends JpaRepository<HolidayInfoEn
             " WHERE holidayYear IN :yearList", nativeQuery = true)
     public void holidayInfoBatchDelete(List<Integer> yearList);
 
+    @Modifying
+    @Query(value = "DELETE FROM holidayInfo" +
+            " WHERE holidayYear = :year AND countryCode = :countryCode", nativeQuery = true)
+    public void holidayInfoBatchDelete(int year,String countryCode);
+
     public List<HolidayInfoEntity> findByHolidayYearAndCountryCode(int year, String countryCode);
 
     public Optional<HolidayInfoEntity> findFirstByHolidayYearAndCountryCode(int year, String countryCode);

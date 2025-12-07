@@ -74,8 +74,21 @@ public class HolidayController {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
     })
-    public CommonResponse<String> reFreshData(@PathVariable String country, @PathVariable int year){
+    public CommonResponse<String> refreshData(@PathVariable String country, @PathVariable int year){
         service.refreshHolidayData(year, country);
         return new CommonResponse("SUCCESS");
     }
+
+    @DeleteMapping("/api/holiday/{country}/{year}")
+    @Operation(summary = "공휴일 데이터 삭제",
+            description = "호출한 국가/연도의 공휴일 데이터를 삭제합니다")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "503", description = "외부 API 오류 혹은 기타 원인으로 인한 실패")
+    })
+    public CommonResponse<String> deleteData(@PathVariable String country, @PathVariable int year){
+        service.deleteHolidayInfo(year, country);
+        return new CommonResponse("SUCCESS");
+    }
+
 }

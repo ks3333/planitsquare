@@ -119,4 +119,22 @@ public class HolidayManageService {
         }
     }
 
+    @Transactional(rollbackOn = Exception.class)
+    public void deleteHolidayInfo(int year, String countryCode){
+        List<HolidayInfoDto> beforeHolidayInfoList = holidayManageStore.getHolidayInfoList(year, countryCode);
+        if(!beforeHolidayInfoList.isEmpty()){
+            List<Long> deleteIds = beforeHolidayInfoList.stream().map(HolidayInfoDto::getHolidayInfoSeq).toList();
+            holidayManageStore.holidayTypeBatchDelete(deleteIds);
+            holidayManageStore.holidayCountryBatchDelete(deleteIds);
+            holidayManageStore.holidayInfoBatchDelete(year, countryCode);
+        }
+    }
+
+    @Transactional(rollbackOn = Exception.class)
+    public void scheduleSynchronizeHolidayData(int year){
+        List<CountryInfoDto> countryInfoList = holidayManageStore.getHCountryInfoAll();
+        List<String> countryList = countryInfoList.stream().map(CountryInfoDto::getCountryCode).toList();
+        countryList.forEach(f -> refreshHolidayData(year, f));
+    }
+
 }

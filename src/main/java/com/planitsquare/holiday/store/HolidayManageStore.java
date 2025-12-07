@@ -81,6 +81,12 @@ public class HolidayManageStore {
         holidayInfoEntityRepository.holidayInfoBatchDelete(yearList);
     }
 
+    public void holidayInfoBatchDelete(int year, String countryCode) {
+        Assert.notNull(year, "year must not be empty");
+        Assert.notNull(countryCode, "countryCode must not be empty");
+        holidayInfoEntityRepository.holidayInfoBatchDelete(year, countryCode);
+    }
+
     public void holidayCountryBatchDelete(List<Long> ids) {
         Assert.notEmpty(ids, "Id list must not be empty");
         holidayCountryEntityRepository.holidayCountryBatchDelete(ids);
